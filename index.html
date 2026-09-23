@@ -1,0 +1,1922 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Waleed Khan — WhatsApp Remote Backup Tool</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+<style>
+  :root{
+    --green-dark:#052e1c;
+    --green-mid:#0a4d2e;
+    --green-light:#0d6b40;
+    --green-glow:#10b981;
+    --green-soft:#d1fae5;
+
+    --blue-dark:#0c1e3a;
+    --blue-mid:#123a6b;
+    --blue-light:#1e5bb8;
+    --blue-glow:#3b82f6;
+    --blue-soft:#dbeafe;
+
+    --red:#dc2626;
+    --red-dark:#991b1b;
+    --red-glow:#ef4444;
+
+    --text:#e8f3ff;
+    --muted:#94a3b8;
+    --border:rgba(59,130,246,.25);
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{width:100%;min-height:100vh;overflow-x:hidden;font-family:'Inter',sans-serif;color:var(--text)}
+
+  body{
+    background:
+      radial-gradient(circle at 10% 10%, rgba(16,185,129,.35), transparent 45%),
+      radial-gradient(circle at 90% 90%, rgba(59,130,246,.4), transparent 50%),
+      radial-gradient(circle at 50% 50%, rgba(10,77,46,.4), transparent 60%),
+      linear-gradient(135deg,#021a10 0%,#0c1e3a 50%,#052e1c 100%);
+    min-height:100vh;
+  }
+  body::before{
+    content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+    background:
+      repeating-linear-gradient(0deg,rgba(16,185,129,.04) 0 1px,transparent 1px 60px),
+      repeating-linear-gradient(90deg,rgba(59,130,246,.04) 0 1px,transparent 1px 60px);
+  }
+
+  /* ============= AUTH / APPROVAL PAGES ============= */
+  .approval-page,.auth-page{
+    display:flex;align-items:center;justify-content:center;
+    min-height:100vh;padding:20px;width:100%;
+    position:fixed;inset:0;z-index:200;
+    overflow-y:auto;
+  }
+  .approval-page{display:flex}
+  .auth-page{display:none}
+
+  .auth-card,.approval-card{
+    width:100%;max-width:430px;padding:34px 28px;border-radius:22px;
+    background:linear-gradient(145deg,rgba(12,30,58,.95),rgba(5,46,28,.9));
+    backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
+    border:1px solid var(--border);
+    box-shadow:
+      0 24px 60px rgba(0,0,0,.5),
+      0 0 0 1px rgba(16,185,129,.15) inset,
+      0 0 60px -20px rgba(16,185,129,.5);
+    animation:rise .6s cubic-bezier(.2,.8,.2,1);
+    position:relative;z-index:2;
+  }
+  .auth-card::before,.approval-card::before{
+    content:'';position:absolute;left:0;top:30px;bottom:30px;width:4px;
+    background:linear-gradient(180deg,var(--green-glow),var(--blue-glow),var(--red-glow));
+    border-radius:0 4px 4px 0;
+    box-shadow:0 0 22px rgba(16,185,129,.7);
+  }
+  @keyframes rise{from{opacity:0;transform:translateY(28px) scale(.96)}to{opacity:1;transform:translateY(0) scale(1)}}
+
+  .auth-header,.approval-header{text-align:center;margin-bottom:22px}
+  .glow-icon{
+    width:70px;height:70px;margin:0 auto 14px;border-radius:18px;
+    display:grid;place-items:center;
+    background:linear-gradient(135deg,var(--green-glow),var(--blue-light));
+    font-size:32px;color:#fff;
+    box-shadow:0 10px 30px rgba(16,185,129,.6),inset 0 1px 0 rgba(255,255,255,.3);
+    animation:pulseGlow 2.4s ease-in-out infinite;
+  }
+  @keyframes pulseGlow{
+    0%,100%{box-shadow:0 10px 30px rgba(16,185,129,.6),inset 0 1px 0 rgba(255,255,255,.3)}
+    50%{box-shadow:0 10px 42px rgba(59,130,246,.7),inset 0 1px 0 rgba(255,255,255,.3)}
+  }
+  .auth-header h2,.approval-header h1{
+    font-size:20px;font-weight:800;margin-bottom:6px;color:#fff;letter-spacing:-.3px;
+  }
+  .approval-header h1 span{
+    background:linear-gradient(90deg,var(--green-glow),var(--blue-glow),var(--red-glow));
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  .auth-header p,.approval-header p{color:var(--muted);font-size:12.5px;line-height:1.5}
+
+  .approval-key-display{
+    padding:18px;margin:20px 0;text-align:center;border-radius:14px;
+    border:1px dashed rgba(16,185,129,.5);
+    background:linear-gradient(135deg,rgba(16,185,129,.12),rgba(59,130,246,.12));
+  }
+  .approval-key-display label{
+    display:block;font-size:10px;color:var(--muted);
+    text-transform:uppercase;letter-spacing:1.8px;margin-bottom:8px;font-weight:800;
+  }
+  .approval-key-display .key{
+    font-size:15px;font-weight:800;font-family:'JetBrains Mono',monospace;
+    letter-spacing:1.5px;word-break:break-all;
+    background:linear-gradient(90deg,var(--green-glow),var(--blue-glow));
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  .approval-status{
+    padding:12px;border-radius:12px;margin:14px 0;
+    text-align:center;font-weight:800;
+    display:flex;align-items:center;justify-content:center;gap:8px;font-size:12.5px;
+    background:rgba(220,38,38,.15);
+    border:1px solid rgba(220,38,38,.4);
+    color:#fca5a5;
+  }
+  .approval-status.approved{
+    background:rgba(16,185,129,.15);
+    border-color:rgba(16,185,129,.5);
+    color:#6ee7b7;
+  }
+  .approval-actions{display:flex;flex-direction:column;gap:10px}
+
+  /* ============= BUTTONS ============= */
+  .btn{
+    width:100%;padding:13px 18px;border:none;border-radius:12px;
+    font-size:13px;font-weight:800;cursor:pointer;transition:all .3s;
+    display:flex;align-items:center;justify-content:center;gap:8px;
+    font-family:inherit;position:relative;overflow:hidden;letter-spacing:.3px;
+    color:#fff;
+  }
+  .btn::after{
+    content:'';position:absolute;inset:0;
+    background:linear-gradient(90deg,transparent,rgba(255,255,255,.25),transparent);
+    transform:translateX(-100%);transition:transform .7s;
+  }
+  .btn:hover::after{transform:translateX(100%)}
+  .btn:hover{transform:translateY(-2px)}
+  .btn.loading{pointer-events:none;opacity:.75}
+  .btn .spinner{display:none;width:16px;height:16px;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite}
+  .btn.loading .spinner{display:block}
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  .btn-primary{
+    background:linear-gradient(135deg,var(--blue-light),var(--blue-glow));
+    box-shadow:0 6px 22px rgba(59,130,246,.55),inset 0 1px 0 rgba(255,255,255,.25);
+  }
+  .btn-primary:hover{box-shadow:0 12px 30px rgba(59,130,246,.7),inset 0 1px 0 rgba(255,255,255,.3)}
+
+  .btn-whatsapp,.btn-success{
+    background:linear-gradient(135deg,var(--green-glow),var(--green-light));
+    box-shadow:0 6px 22px rgba(16,185,129,.55),inset 0 1px 0 rgba(255,255,255,.25);
+  }
+  .btn-whatsapp:hover,.btn-success:hover{box-shadow:0 12px 30px rgba(16,185,129,.7)}
+
+  .btn-danger{
+    background:linear-gradient(135deg,var(--red-glow),var(--red-dark));
+    box-shadow:0 6px 22px rgba(220,38,38,.55),inset 0 1px 0 rgba(255,255,255,.25);
+  }
+  .btn-danger:hover{box-shadow:0 12px 30px rgba(220,38,38,.7)}
+
+  /* ============= FORM ============= */
+  .form-group,.form-row{margin-bottom:14px}
+  .form-group label,.form-row label{
+    display:block;margin-bottom:6px;font-size:11.5px;font-weight:800;
+    color:#cbd5e1;letter-spacing:.3px;
+  }
+  .form-group input,.form-row input,.form-row select,.form-row textarea{
+    width:100%;padding:12px 14px;
+    background:rgba(12,30,58,.7);
+    border:1px solid rgba(59,130,246,.3);
+    border-radius:10px;color:#fff;font-size:13px;font-family:inherit;
+    transition:all .3s;
+  }
+  .form-group input::placeholder,.form-row input::placeholder,.form-row textarea::placeholder{color:#475569}
+  .form-group input:focus,.form-row input:focus,.form-row select:focus,.form-row textarea:focus{
+    outline:none;border-color:var(--blue-glow);
+    background:rgba(12,30,58,.95);
+    box-shadow:0 0 0 4px rgba(59,130,246,.2);
+  }
+  .form-row textarea{resize:vertical;min-height:70px;font-family:'JetBrains Mono',monospace;font-size:12px}
+  .form-row select{cursor:pointer}
+  select option{background:#0c1e3a;color:#e8f3ff}
+
+  .auth-switch{text-align:center;margin-top:16px;color:var(--muted);font-size:12.5px}
+  .auth-switch a{color:#60a5fa;text-decoration:none;font-weight:800;cursor:pointer}
+  .auth-switch a:hover{color:#fff;text-decoration:underline}
+
+  .error-msg,.success-msg{padding:11px 13px;border-radius:10px;margin-bottom:14px;font-size:12.5px;display:none;font-weight:700}
+  .error-msg{background:rgba(220,38,38,.15);border:1px solid rgba(220,38,38,.45);color:#fca5a5}
+  .success-msg{background:rgba(16,185,129,.15);border:1px solid rgba(16,185,129,.5);color:#6ee7b7}
+
+  /* ============= DASHBOARD PAGE ============= */
+  .dashboard-page{
+    position:fixed;inset:0;z-index:100;
+    overflow-y:auto;display:none;padding-bottom:30px;
+  }
+  .dashboard-page.show{display:block}
+
+  .dp-header{
+    padding:24px 18px 14px;text-align:center;
+    position:relative;z-index:1;
+  }
+  .brand-row{
+    display:inline-flex;align-items:center;gap:10px;
+    font-size:18px;font-weight:900;letter-spacing:-.3px;color:#fff;
+    text-shadow:0 4px 24px rgba(0,0,0,.5);
+  }
+  .brand-row .wa-icon{
+    font-size:22px;color:var(--green-glow);
+    filter:drop-shadow(0 4px 14px rgba(16,185,129,.8));
+    animation:pulseIcon 2s ease-in-out infinite;
+  }
+  @keyframes pulseIcon{0%,100%{transform:scale(1)}50%{transform:scale(1.1)}}
+  .dp-header-buttons{display:flex;justify-content:center;gap:10px;margin-top:16px;flex-wrap:wrap}
+
+  .dp-btn{
+    padding:11px 22px;border:none;border-radius:12px;
+    font-size:13px;font-weight:800;font-family:inherit;cursor:pointer;
+    display:inline-flex;align-items:center;gap:7px;
+    transition:all .3s;letter-spacing:.3px;color:#fff;
+  }
+  .dp-btn.admin{
+    background:linear-gradient(135deg,var(--blue-light),var(--blue-glow));
+    box-shadow:0 6px 22px rgba(59,130,246,.55),inset 0 1px 0 rgba(255,255,255,.25);
+  }
+  .dp-btn.admin:hover{transform:translateY(-2px) scale(1.03);box-shadow:0 12px 30px rgba(59,130,246,.75)}
+  .dp-btn.logout{
+    background:linear-gradient(135deg,var(--red-glow),var(--red-dark));
+    box-shadow:0 6px 22px rgba(220,38,38,.55),inset 0 1px 0 rgba(255,255,255,.25);
+  }
+  .dp-btn.logout:hover{transform:translateY(-2px) scale(1.03);box-shadow:0 12px 30px rgba(220,38,38,.75)}
+
+  .dp-card{
+    margin:20px 14px 0;
+    background:linear-gradient(145deg,rgba(12,30,58,.95),rgba(5,46,28,.92));
+    border:1px solid rgba(59,130,246,.25);
+    border-radius:22px;
+    padding:24px 22px 22px;
+    box-shadow:0 20px 50px rgba(0,0,0,.5),0 0 0 1px rgba(16,185,129,.12) inset;
+    animation:rise .5s cubic-bezier(.2,.8,.2,1);
+    position:relative;z-index:1;
+    overflow:hidden;
+  }
+  .dp-card::before{
+    content:'';position:absolute;top:0;left:0;right:0;height:4px;
+    background:linear-gradient(90deg,var(--green-glow),var(--blue-glow),var(--red-glow));
+    background-size:200% 100%;
+    animation:slideGrad 4s linear infinite;
+  }
+  @keyframes slideGrad{0%{background-position:0% 50%}100%{background-position:200% 50%}}
+  .dp-card .icon-big{
+    font-size:44px;line-height:1;margin-bottom:14px;display:block;
+    filter:drop-shadow(0 6px 18px rgba(16,185,129,.5));
+    animation:bounceIcon 3s ease-in-out infinite;
+  }
+  @keyframes bounceIcon{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+  .dp-card h2{font-size:20px;font-weight:900;color:#fff;letter-spacing:-.4px;margin-bottom:10px}
+  .dp-card p{color:#94a3b8;font-size:13.5px;line-height:1.55;margin-bottom:20px}
+
+  .dp-card-btn{
+    width:100%;padding:15px 22px;border:none;border-radius:13px;
+    font-size:14px;font-weight:800;font-family:inherit;color:#fff;
+    cursor:pointer;transition:all .3s;letter-spacing:.4px;
+    background:linear-gradient(135deg,var(--blue-light),var(--blue-glow));
+    box-shadow:0 8px 22px rgba(59,130,246,.5),inset 0 1px 0 rgba(255,255,255,.25);
+    position:relative;overflow:hidden;
+  }
+  .dp-card-btn::after{
+    content:'';position:absolute;inset:0;
+    background:linear-gradient(90deg,transparent,rgba(255,255,255,.3),transparent);
+    transform:translateX(-100%);transition:transform .7s;
+  }
+  .dp-card-btn:hover::after{transform:translateX(100%)}
+  .dp-card-btn:hover{transform:translateY(-2px);box-shadow:0 12px 30px rgba(59,130,246,.7)}
+  .dp-card-btn.green{
+    background:linear-gradient(135deg,var(--green-glow),var(--green-light));
+    box-shadow:0 8px 22px rgba(16,185,129,.5);
+  }
+  .dp-card-btn.green:hover{box-shadow:0 12px 30px rgba(16,185,129,.7)}
+  .dp-card-btn.red{
+    background:linear-gradient(135deg,var(--red-glow),var(--red-dark));
+    box-shadow:0 8px 22px rgba(220,38,38,.5);
+  }
+  .dp-card-btn.red:hover{box-shadow:0 12px 30px rgba(220,38,38,.7)}
+
+  /* ============= STATS GRID ============= */
+  .stats-grid{
+    display:grid;grid-template-columns:1fr 1fr;gap:12px;
+    margin:20px 14px 0;position:relative;z-index:1;
+  }
+  .stat-card{
+    background:linear-gradient(145deg,rgba(12,30,58,.95),rgba(5,46,28,.92));
+    border:1px solid rgba(59,130,246,.25);
+    border-radius:18px;padding:18px 16px;
+    box-shadow:0 12px 30px rgba(0,0,0,.4);
+    animation:rise .5s cubic-bezier(.2,.8,.2,1);
+  }
+  .stat-card .stat-icon{font-size:26px;margin-bottom:8px;display:block}
+  .stat-card .stat-label{
+    font-size:10px;color:#94a3b8;text-transform:uppercase;
+    letter-spacing:1.2px;font-weight:800;margin-bottom:4px;
+  }
+  .stat-card .stat-value{font-size:22px;font-weight:900;color:#fff;letter-spacing:-.5px}
+  .stat-card.blue .stat-icon{color:var(--blue-glow)}
+  .stat-card.green .stat-icon{color:var(--green-glow)}
+  .stat-card.purple .stat-icon{color:#a855f7}
+  .stat-card.red .stat-icon{color:var(--red-glow)}
+
+  /* ============= RUNNING PROCESSES PAGE ============= */
+  .rp-page{
+    position:fixed;inset:0;z-index:110;
+    overflow-y:auto;display:none;padding-bottom:30px;
+  }
+  .rp-page.show{display:block}
+
+  .rp-back-btn{
+    display:inline-flex;align-items:center;gap:8px;
+    margin:18px 16px 0;padding:11px 20px;
+    border:none;border-radius:50px;
+    background:linear-gradient(135deg,var(--blue-light),var(--blue-glow));
+    color:#fff;
+    font-size:13px;font-weight:800;font-family:inherit;cursor:pointer;
+    box-shadow:0 6px 20px rgba(59,130,246,.5),inset 0 1px 0 rgba(255,255,255,.25);
+    transition:all .3s;position:relative;z-index:1;
+  }
+  .rp-back-btn:hover{transform:translateY(-2px);box-shadow:0 10px 28px rgba(59,130,246,.7)}
+
+  .rp-header-row{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:14px 16px 8px;gap:12px;flex-wrap:wrap;
+    position:relative;z-index:1;
+  }
+  .rp-title{
+    display:flex;align-items:center;gap:10px;
+    color:#fff;font-size:22px;font-weight:900;line-height:1.1;
+    letter-spacing:-.4px;
+    text-shadow:0 4px 24px rgba(0,0,0,.5);
+    flex:1;min-width:140px;
+  }
+  .rp-title .magnify{
+    font-size:24px;
+    filter:drop-shadow(0 4px 12px rgba(16,185,129,.6));
+    animation:rotateSearch 4s ease-in-out infinite;
+  }
+  @keyframes rotateSearch{0%,100%{transform:rotate(-10deg)}50%{transform:rotate(10deg)}}
+
+  .rp-refresh-btn,.rp-bulk-btn{
+    display:inline-flex;align-items:center;gap:7px;
+    padding:11px 18px;border:none;border-radius:50px;
+    font-size:12.5px;font-weight:800;font-family:inherit;cursor:pointer;
+    transition:all .3s;white-space:nowrap;color:#fff;
+  }
+  .rp-refresh-btn{
+    background:linear-gradient(135deg,var(--blue-light),var(--blue-glow));
+    box-shadow:0 6px 20px rgba(59,130,246,.5),inset 0 1px 0 rgba(255,255,255,.25);
+  }
+  .rp-refresh-btn:hover{transform:translateY(-2px);box-shadow:0 10px 28px rgba(59,130,246,.7)}
+  .rp-refresh-btn.spinning i{animation:spin 0.8s linear}
+
+  .rp-bulk-btn{
+    background:linear-gradient(135deg,var(--red-glow),var(--red-dark));
+    box-shadow:0 6px 20px rgba(220,38,38,.5),inset 0 1px 0 rgba(255,255,255,.25);
+  }
+  .rp-bulk-btn:hover{transform:translateY(-2px);box-shadow:0 10px 28px rgba(220,38,38,.7)}
+
+  .rp-error-box{
+    display:none;
+    margin:12px 16px 0;padding:14px 18px;
+    background:linear-gradient(135deg,rgba(220,38,38,.2),rgba(153,27,27,.3));
+    border:1px solid rgba(220,38,38,.5);
+    border-radius:14px;color:#fca5a5;
+    font-size:13px;font-weight:800;text-align:center;
+    align-items:center;justify-content:center;gap:8px;
+    position:relative;z-index:1;
+  }
+  .rp-error-box.show{display:flex}
+
+  .rp-card-wrapper{
+    margin:14px 12px 0;
+    background:linear-gradient(145deg,rgba(12,30,58,.95),rgba(5,46,28,.92));
+    border:1px solid rgba(59,130,246,.25);
+    border-radius:22px;
+    padding:20px 18px 24px;
+    box-shadow:0 22px 55px rgba(0,0,0,.5);
+    animation:rise .5s cubic-bezier(.2,.8,.2,1);
+    position:relative;z-index:1;
+  }
+  .rp-brand{
+    display:flex;align-items:center;gap:10px;
+    font-size:19px;font-weight:900;color:#fff;
+    line-height:1.1;letter-spacing:-.4px;
+  }
+  .rp-brand .wa-icon{
+    font-size:22px;color:var(--green-glow);
+    filter:drop-shadow(0 4px 14px rgba(16,185,129,.7));
+  }
+  .rp-divider{
+    height:2px;background:linear-gradient(90deg,var(--green-glow),var(--blue-glow),var(--red-glow));
+    margin:14px 0 18px;border-radius:2px;opacity:.6;
+  }
+
+  .rp-process{
+    background:linear-gradient(135deg,rgba(5,46,28,.6),rgba(12,30,58,.7));
+    border-radius:18px;
+    padding:20px 18px 18px;
+    position:relative;
+    border-left:4px solid var(--green-glow);
+    box-shadow:0 6px 20px rgba(16,185,129,.15),0 0 0 1px rgba(59,130,246,.15);
+    margin-bottom:14px;
+    transition:all .3s;
+  }
+  .rp-process:hover{
+    transform:translateY(-2px);
+    box-shadow:0 12px 30px rgba(16,185,129,.3),0 0 0 1px rgba(59,130,246,.25);
+  }
+  .rp-process:last-child{margin-bottom:0}
+  .rp-process.awaiting-creds{
+    border-left-color:#f59e0b;
+    background:linear-gradient(135deg,rgba(120,53,15,.4),rgba(12,30,58,.7));
+  }
+  .rp-process.backup-active{
+    border-left-color:var(--red-glow);
+    background:linear-gradient(135deg,rgba(153,27,27,.35),rgba(12,30,58,.7));
+    animation:backupPulse 2s ease-in-out infinite;
+  }
+  @keyframes backupPulse{
+    0%,100%{box-shadow:0 6px 20px rgba(220,38,38,.2),0 0 0 1px rgba(220,38,38,.3)}
+    50%{box-shadow:0 10px 32px rgba(220,38,38,.5),0 0 0 1px rgba(220,38,38,.5)}
+  }
+
+  .rp-user{display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:16px}
+  .rp-user .avatar-icon{
+    font-size:30px;color:var(--green-glow);
+    filter:drop-shadow(0 4px 10px rgba(16,185,129,.6));
+  }
+  .rp-user .username{font-size:21px;font-weight:900;color:#fff;letter-spacing:-.4px}
+
+  .rp-status-badge{
+    display:inline-flex;align-items:center;gap:6px;
+    padding:5px 12px;border-radius:50px;
+    font-size:10.5px;font-weight:800;
+    text-transform:uppercase;letter-spacing:.8px;
+    margin:0 auto 14px;width:fit-content;
+  }
+  .rp-status-badge.running{
+    background:rgba(16,185,129,.18);
+    color:#6ee7b7;border:1px solid rgba(16,185,129,.5);
+  }
+  .rp-status-badge.awaiting{
+    background:rgba(245,158,11,.18);
+    color:#fcd34d;border:1px solid rgba(245,158,11,.5);
+    animation:pulseWarn 1.8s ease-in-out infinite;
+  }
+  .rp-status-badge.backup{
+    background:rgba(220,38,38,.2);
+    color:#fca5a5;border:1px solid rgba(220,38,38,.5);
+    animation:pulseWarn 1.5s ease-in-out infinite;
+  }
+  @keyframes pulseWarn{0%,100%{opacity:1}50%{opacity:.6}}
+
+  .rp-buttons{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px}
+  .rp-buttons.three{grid-template-columns:1fr 1fr 1fr}
+  .rp-btn{
+    padding:12px 10px;border:none;border-radius:50px;
+    font-size:12.5px;font-weight:800;font-family:inherit;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;gap:6px;
+    color:#fff;transition:all .25s;letter-spacing:.2px;
+    position:relative;overflow:hidden;
+  }
+  .rp-btn::after{
+    content:'';position:absolute;inset:0;
+    background:linear-gradient(90deg,transparent,rgba(255,255,255,.3),transparent);
+    transform:translateX(-100%);transition:transform .6s;
+  }
+  .rp-btn:hover::after{transform:translateX(100%)}
+  .rp-btn:hover{transform:translateY(-2px)}
+  .rp-btn i{font-size:14px}
+
+  .rp-btn.monitor{
+    background:linear-gradient(135deg,var(--blue-light),var(--blue-glow));
+    box-shadow:0 6px 18px rgba(59,130,246,.5),inset 0 1px 0 rgba(255,255,255,.25);
+  }
+  .rp-btn.monitor:hover{box-shadow:0 10px 26px rgba(59,130,246,.7)}
+
+  .rp-btn.stop{
+    background:linear-gradient(135deg,var(--red-glow),var(--red-dark));
+    box-shadow:0 6px 18px rgba(220,38,38,.5),inset 0 1px 0 rgba(255,255,255,.25);
+  }
+  .rp-btn.stop:hover{box-shadow:0 10px 26px rgba(220,38,38,.7)}
+
+  .rp-btn.backup{
+    background:linear-gradient(135deg,var(--green-glow),var(--green-light));
+    box-shadow:0 6px 18px rgba(16,185,129,.5),inset 0 1px 0 rgba(255,255,255,.25);
+  }
+  .rp-btn.backup:hover{box-shadow:0 10px 26px rgba(16,185,129,.7)}
+
+  .rp-details{display:flex;flex-direction:column;gap:9px}
+  .rp-detail-row{display:flex;align-items:baseline;gap:6px;flex-wrap:wrap;font-size:13px}
+  .rp-detail-row .label{font-weight:800;color:#cbd5e1;letter-spacing:-.2px}
+  .rp-detail-row .value{
+    font-weight:600;color:#94a3b8;
+    font-family:'JetBrains Mono',monospace;font-size:12px;
+    word-break:break-all;
+    background:rgba(59,130,246,.1);
+    padding:3px 8px;border-radius:6px;
+  }
+  .rp-detail-row .value.success{background:rgba(16,185,129,.15);color:#6ee7b7}
+  .rp-detail-row .value.warn{background:rgba(245,158,11,.15);color:#fcd34d}
+  .rp-detail-row .value.danger{background:rgba(220,38,38,.15);color:#fca5a5}
+
+  .rp-empty{text-align:center;padding:40px 16px;color:#64748b}
+  .rp-empty i{font-size:48px;color:#334155;margin-bottom:14px;display:block}
+  .rp-empty h3{font-size:16px;color:#fff;margin-bottom:6px;font-weight:800}
+  .rp-empty p{font-size:12.5px}
+
+  /* ============= MODALS ============= */
+  .modal{
+    display:none;position:fixed;inset:0;z-index:1000;
+    background:rgba(2,10,20,.85);
+    backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+    align-items:center;justify-content:center;padding:16px;
+  }
+  .modal.show{display:flex;animation:fadeIn .25s}
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+  .modal-content{
+    padding:24px;max-width:540px;width:100%;max-height:92vh;overflow-y:auto;
+    border-radius:22px;
+    background:linear-gradient(145deg,rgba(12,30,58,.98),rgba(5,46,28,.95));
+    border:1px solid rgba(59,130,246,.3);
+    box-shadow:0 28px 70px rgba(0,0,0,.7),0 0 60px -20px rgba(16,185,129,.4);
+    position:relative;
+    animation:rise .35s cubic-bezier(.2,.8,.2,1);
+  }
+  .modal-content::before{
+    content:'';position:absolute;top:0;left:0;right:0;height:4px;
+    background:linear-gradient(90deg,var(--green-glow),var(--blue-glow),var(--red-glow));
+    background-size:200% 100%;
+    border-radius:22px 22px 0 0;
+    animation:slideGrad 4s linear infinite;
+  }
+  .modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+  .modal-header h3{font-size:17px;font-weight:900;display:flex;align-items:center;gap:8px;letter-spacing:-.3px;color:#fff}
+  .modal-close{
+    background:rgba(220,38,38,.15);border:1px solid rgba(220,38,38,.4);
+    color:var(--red-glow);font-size:18px;cursor:pointer;
+    width:34px;height:34px;border-radius:50%;display:grid;place-items:center;
+    transition:all .3s;font-weight:800;
+  }
+  .modal-close:hover{background:var(--red);color:#fff;transform:rotate(90deg)}
+
+  .console-viewer{
+    background:linear-gradient(160deg,#020617,#0a1428);
+    border-radius:12px;padding:14px;max-height:360px;overflow-y:auto;
+    font-family:'JetBrains Mono',monospace;font-size:11.5px;
+    border:1px solid rgba(59,130,246,.2);
+  }
+  .console-line{
+    padding:6px 10px;margin-bottom:4px;border-radius:6px;
+    background:rgba(59,130,246,.06);color:#cbd5e1;
+    word-break:break-word;
+    border-left:2px solid var(--blue-glow);
+  }
+  .console-line.success{border-left-color:var(--green-glow);color:#6ee7b7;background:rgba(16,185,129,.08)}
+  .console-line.error{border-left-color:var(--red-glow);color:#fca5a5;background:rgba(220,38,38,.08)}
+  .console-line.warn{border-left-color:#f59e0b;color:#fcd34d;background:rgba(245,158,11,.08)}
+
+  .info-badge{
+    display:inline-flex;align-items:center;gap:5px;
+    padding:3px 9px;border-radius:50px;
+    font-size:10px;font-weight:800;letter-spacing:.4px;
+    text-transform:uppercase;
+  }
+  .info-badge.blue{background:rgba(59,130,246,.15);color:#93c5fd}
+  .info-badge.green{background:rgba(16,185,129,.15);color:#6ee7b7}
+  .info-badge.red{background:rgba(220,38,38,.15);color:#fca5a5}
+  .info-badge.orange{background:rgba(245,158,11,.15);color:#fcd34d}
+
+  .file-info{font-size:11px;color:#64748b;margin-top:4px;font-family:'JetBrains Mono',monospace}
+
+  .info-panel{
+    background:linear-gradient(135deg,rgba(16,185,129,.12),rgba(59,130,246,.12));
+    border:1px solid rgba(16,185,129,.4);
+    border-radius:12px;padding:14px;margin-bottom:16px;
+    color:#6ee7b7;font-size:12.5px;font-weight:700;
+    display:flex;gap:10px;align-items:flex-start;line-height:1.5;
+  }
+  .info-panel i{font-size:16px;margin-top:2px;color:var(--green-glow)}
+  .info-panel.red{
+    background:linear-gradient(135deg,rgba(220,38,38,.12),rgba(153,27,27,.15));
+    border-color:rgba(220,38,38,.4);
+    color:#fca5a5;
+  }
+  .info-panel.red i{color:var(--red-glow)}
+
+  .loading-overlay{
+    position:fixed;inset:0;z-index:9999;
+    background:rgba(2,10,20,.9);
+    backdrop-filter:blur(12px);
+    display:none;align-items:center;justify-content:center;
+    flex-direction:column;gap:18px;color:#fff;
+  }
+  .loading-overlay.show{display:flex}
+  .loading-spinner{
+    width:54px;height:54px;border:4px solid rgba(59,130,246,.25);
+    border-top-color:var(--green-glow);border-radius:50%;
+    animation:spin 0.8s linear infinite;
+  }
+  .loading-overlay p{font-size:14px;font-weight:800;letter-spacing:.4px}
+
+  /* Session picker row for linking backup */
+  .session-picker{
+    display:grid;gap:8px;max-height:200px;overflow-y:auto;
+    padding:8px;background:rgba(2,10,20,.4);border-radius:10px;
+    border:1px solid rgba(59,130,246,.2);
+  }
+  .session-option{
+    padding:10px 12px;border-radius:8px;cursor:pointer;
+    background:rgba(12,30,58,.6);border:1px solid rgba(59,130,246,.2);
+    font-size:12px;font-weight:700;color:#cbd5e1;
+    transition:all .2s;
+  }
+  .session-option:hover{background:rgba(59,130,246,.15);border-color:var(--blue-glow)}
+  .session-option.selected{background:rgba(16,185,129,.2);border-color:var(--green-glow);color:#6ee7b7}
+
+  @media(max-width:768px){
+    .rp-title{font-size:19px}
+    .rp-refresh-btn,.rp-bulk-btn{padding:10px 14px;font-size:11.5px}
+    .rp-back-btn{padding:10px 16px;font-size:12px;margin:16px 14px 0}
+    .rp-card-wrapper{margin:12px 10px 0;padding:18px 16px 20px;border-radius:20px}
+    .rp-brand{font-size:17px}
+    .rp-user .username{font-size:19px}
+    .rp-user .avatar-icon{font-size:26px}
+    .rp-btn{font-size:11.5px;padding:10px 6px}
+    .rp-btn i{font-size:13px}
+    .rp-detail-row{font-size:12.5px}
+    .rp-detail-row .value{font-size:11px}
+    .dp-card h2{font-size:18px}
+    .dp-card p{font-size:12.5px}
+    .dp-card-btn{font-size:13px;padding:13px 18px}
+    .dp-card .icon-big{font-size:38px}
+    .brand-row{font-size:16px}
+    .stat-card .stat-value{font-size:19px}
+    .rp-buttons.three{grid-template-columns:1fr 1fr}
+    .dp-header-buttons{flex-wrap:wrap;justify-content:center}
+  }
+
+  ::-webkit-scrollbar{width:8px;height:8px}
+  ::-webkit-scrollbar-track{background:rgba(2,10,20,.5)}
+  ::-webkit-scrollbar-thumb{
+    background:linear-gradient(180deg,var(--green-glow),var(--blue-glow));
+    border-radius:4px;
+  }
+  ::-webkit-scrollbar-thumb:hover{background:linear-gradient(180deg,var(--blue-glow),var(--green-glow))}
+</style>
+</head>
+<body>
+
+<!-- ============ LOADING OVERLAY ============ -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="loading-spinner"></div>
+  <p id="loadingText">Please wait...</p>
+</div>
+
+<!-- ============ APPROVAL PAGE ============ -->
+<div id="approvalPage" class="approval-page">
+  <div class="approval-card">
+    <div class="approval-header">
+      <div class="glow-icon"><i class="fab fa-whatsapp"></i></div>
+      <h1>Waleed Khan <span>Remote Backup Tool</span></h1>
+      <p>Hardware Lock Active — Admin approval required</p>
+    </div>
+    <div class="approval-key-display">
+      <label>Your Unique Hardware Key</label>
+      <div class="key" id="approvalKeyDisplay">Generating...</div>
+    </div>
+    <div class="approval-status" id="approvalStatus">
+      <i class="fas fa-clock"></i>
+      <span>Waiting for admin approval...</span>
+    </div>
+    <div class="approval-actions">
+      <button class="btn btn-primary" id="checkApprovalBtn">
+        <span class="spinner"></span>
+        <i class="fas fa-check-circle"></i>
+        <span>Check Approval Status</span>
+      </button>
+      <button class="btn btn-whatsapp" id="sendApprovalBtn">
+        <i class="fab fa-whatsapp"></i>
+        <span>Request Approval via WhatsApp</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ LOGIN ============ -->
+<div class="auth-page" id="loginPage">
+  <div class="auth-card">
+    <div class="auth-header">
+      <h2>Access Panel</h2>
+      <p>Provide credentials to manage WhatsApp nodes</p>
+    </div>
+    <div id="loginError" class="error-msg"></div>
+    <form id="loginForm">
+      <div class="form-group">
+        <label><i class="fas fa-user"></i> Username</label>
+        <input type="text" id="loginUsername" placeholder="Enter username" required>
+      </div>
+      <div class="form-group">
+        <label><i class="fas fa-lock"></i> Password</label>
+        <input type="password" id="loginPassword" placeholder="Enter password" required>
+      </div>
+      <button type="submit" class="btn btn-primary">
+        <span class="spinner"></span>
+        <i class="fas fa-sign-in-alt"></i><span>Login</span>
+      </button>
+    </form>
+    <div class="auth-switch">Don't have an account? <a id="showSignup">Register here</a></div>
+  </div>
+</div>
+
+<!-- ============ SIGNUP ============ -->
+<div class="auth-page" id="signupPage">
+  <div class="auth-card">
+    <div class="auth-header">
+      <h2>Create Account</h2>
+      <p>Register access credentials</p>
+    </div>
+    <div id="signupError" class="error-msg"></div>
+    <div id="signupSuccess" class="success-msg"></div>
+    <form id="signupForm">
+      <div class="form-group">
+        <label><i class="fas fa-user"></i> Username</label>
+        <input type="text" id="signupUsername" placeholder="Username (min 3 chars)" required>
+      </div>
+      <div class="form-group">
+        <label><i class="fas fa-lock"></i> Password</label>
+        <input type="password" id="signupPassword" placeholder="Password (min 6 chars)" required>
+      </div>
+      <button type="submit" class="btn btn-success">
+        <span class="spinner"></span>
+        <i class="fas fa-user-plus"></i><span>Register Account</span>
+      </button>
+    </form>
+    <div class="auth-switch">Already registered? <a id="showLogin">Login here</a></div>
+  </div>
+</div>
+
+<!-- ============ DASHBOARD ============ -->
+<div class="dashboard-page" id="dashboardPage">
+  <div class="dp-header">
+    <div class="brand-row">
+      <i class="fab fa-whatsapp wa-icon"></i>
+      <span>WhatsApp Remote Backup Tool</span>
+    </div>
+    <div class="dp-header-buttons">
+      <button class="dp-btn admin" id="adminBtn"><i class="fas fa-cog"></i> Admin</button>
+      <button class="dp-btn logout" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</button>
+    </div>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card blue">
+      <i class="fas fa-layer-group stat-icon"></i>
+      <div class="stat-label">Total Sessions</div>
+      <div class="stat-value" id="statTotalSessions">0</div>
+    </div>
+    <div class="stat-card green">
+      <i class="fas fa-play-circle stat-icon"></i>
+      <div class="stat-label">Running</div>
+      <div class="stat-value" id="statRunning">0</div>
+    </div>
+    <div class="stat-card red">
+      <i class="fas fa-shield-alt stat-icon"></i>
+      <div class="stat-label">Backup Active</div>
+      <div class="stat-value" id="statBackupActive">0</div>
+    </div>
+    <div class="stat-card purple">
+      <i class="fas fa-link stat-icon"></i>
+      <div class="stat-label">Backup Links</div>
+      <div class="stat-value" id="statBackupLinks">0</div>
+    </div>
+  </div>
+
+  <div class="dp-card">
+    <span class="icon-big">📊</span>
+    <h2>Running Processes</h2>
+    <p>Monitor all your WhatsApp sessions in real-time. View backup status, manage tasks, control failover.</p>
+    <button class="dp-card-btn" id="viewStatusBtn"><i class="fas fa-list"></i> View Running</button>
+  </div>
+
+  <div class="dp-card">
+    <span class="icon-big">🔑</span>
+    <h2>Pair New Session</h2>
+    <p>Generate a pairing code to link a new WhatsApp number. Optionally mark as backup for failover.</p>
+    <button class="dp-card-btn green" id="pairNewBtn"><i class="fab fa-whatsapp"></i> Pair New Number</button>
+  </div>
+
+  <div class="dp-card">
+    <span class="icon-big">📤</span>
+    <h2>Send Messages / Images</h2>
+    <p>Start a message loop or image loop on any connected session with custom delay and mentions.</p>
+    <button class="dp-card-btn" id="sendMessageBtn"><i class="fas fa-paper-plane"></i> Create Task</button>
+  </div>
+
+  <div class="dp-card">
+    <span class="icon-big">🔗</span>
+    <h2>Link Remote Backup</h2>
+    <p>Link a backup session to a primary. When primary fails, backup auto-takes over the same task.</p>
+    <button class="dp-card-btn red" id="linkBackupBtn"><i class="fas fa-shield-alt"></i> Manage Backups</button>
+  </div>
+</div>
+
+<!-- ============ RUNNING PROCESSES PAGE ============ -->
+<div class="rp-page" id="runningProcessesPage">
+  <button class="rp-back-btn" id="rpBackBtn">
+    <i class="fas fa-arrow-left"></i> Back to Dashboard
+  </button>
+
+  <div class="rp-header-row">
+    <div class="rp-title">
+      <span class="magnify">🔍</span>
+      <span>Running<br>Processes</span>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="rp-refresh-btn" id="rpRefreshBtn">
+        <i class="fas fa-sync-alt"></i> Refresh
+      </button>
+    </div>
+  </div>
+
+  <div class="rp-error-box" id="rpErrorBox">
+    <i class="fas fa-times"></i>
+    <span>Error loading status</span>
+  </div>
+
+  <div class="rp-card-wrapper">
+    <div class="rp-brand">
+      <i class="fab fa-whatsapp wa-icon"></i>
+      <span>Session Monitor</span>
+    </div>
+    <div class="rp-divider"></div>
+    <div id="rpProcessList">
+      <div class="rp-empty">
+        <i class="fas fa-spinner fa-spin"></i>
+        <h3>Loading processes...</h3>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ PAIR NEW SESSION MODAL ============ -->
+<div id="pairModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3><i class="fab fa-whatsapp"></i> Pair New WhatsApp Number</h3>
+      <button class="modal-close" id="closePairModal">&times;</button>
+    </div>
+    <div id="pairError" class="error-msg"></div>
+    <div id="pairSuccess" class="success-msg"></div>
+    <div id="pairCodeDisplay" style="display:none;text-align:center;padding:20px;background:rgba(16,185,129,.1);border:1px dashed rgba(16,185,129,.5);border-radius:14px;margin-bottom:16px;">
+      <div style="font-size:11px;color:#94a3b8;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;font-weight:800;">Your Pairing Code</div>
+      <div id="pairCodeText" style="font-size:32px;font-weight:900;letter-spacing:6px;font-family:'JetBrains Mono',monospace;color:#6ee7b7;text-shadow:0 0 20px rgba(16,185,129,.6)"></div>
+      <div style="font-size:11.5px;color:#94a3b8;margin-top:10px;">WhatsApp → Linked Devices → Link with phone number</div>
+    </div>
+    <form id="pairForm">
+      <div class="form-group">
+        <label><i class="fas fa-phone"></i> WhatsApp Number (with country code)</label>
+        <input type="text" id="pairNumber" placeholder="e.g. 923001234567" required>
+      </div>
+      <div class="form-group">
+        <label><i class="fas fa-shield-alt"></i> Session Role</label>
+        <select id="pairRole">
+          <option value="primary">Primary (main sender)</option>
+          <option value="backup">Backup (failover)</option>
+        </select>
+      </div>
+      <div class="form-group" id="pairPrimaryRow" style="display:none;">
+        <label><i class="fas fa-link"></i> Link to Primary Session</label>
+        <select id="pairPrimarySession">
+          <option value="">-- Select primary session --</option>
+        </select>
+      </div>
+      <button type="submit" class="btn btn-whatsapp" id="pairSubmitBtn">
+        <span class="spinner"></span>
+        <i class="fas fa-key"></i><span>Generate Pairing Code</span>
+      </button>
+    </form>
+  </div>
+</div>
+
+<!-- ============ SEND MESSAGE / IMAGE MODAL ============ -->
+<div id="sendModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3><i class="fas fa-paper-plane"></i> Create Sending Task</h3>
+      <button class="modal-close" id="closeSendModal">&times;</button>
+    </div>
+    <div id="sendError" class="error-msg"></div>
+    <form id="sendForm" enctype="multipart/form-data">
+      <div class="form-group">
+        <label><i class="fas fa-layer-group"></i> Task Type</label>
+        <select id="sendTaskType">
+          <option value="message">Message Loop</option>
+          <option value="image">Image Loop</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label><i class="fas fa-plug"></i> Select Session</label>
+        <select id="sendSession" required>
+          <option value="">-- Choose connected session --</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label><i class="fas fa-list"></i> Target Type</label>
+        <select id="sendTargetType" required>
+          <option value="">Select target</option>
+          <option value="individual">Individual / Contact</option>
+          <option value="group">Group Chat</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label><i class="fas fa-hashtag"></i> Target Number / Group ID</label>
+        <input type="text" id="sendTarget" placeholder="e.g. 923001234567 or group-id" required>
+      </div>
+      <div class="form-group">
+        <label><i class="fas fa-hourglass-half"></i> Delay (seconds)</label>
+        <input type="number" id="sendDelay" min="1" value="5" required>
+      </div>
+      <div class="form-group">
+        <label><i class="fas fa-signature"></i> Prefix (optional)</label>
+        <input type="text" id="sendPrefix" placeholder="e.g. 🔥">
+      </div>
+      <div class="form-group">
+        <label><i class="fas fa-at"></i> Mention Mode</label>
+        <select id="sendMentionType">
+          <option value="none">No Mention</option>
+          <option value="single">Single Mention (rotate)</option>
+          <option value="all_listed">All Listed Numbers</option>
+          <option value="selected_group">Selected Group Members</option>
+          <option value="all_group">All Group Members</option>
+          <option value="all_tag">@All Tag</option>
+        </select>
+      </div>
+      <div class="form-group" id="sendMentionNumbersRow" style="display:none;">
+        <label><i class="fas fa-users"></i> Mention Numbers</label>
+        <textarea id="sendMentionNumbers" placeholder="Comma or newline separated"></textarea>
+      </div>
+      <div class="form-group" id="sendMessageFileRow">
+        <label><i class="fas fa-file-alt"></i> Messages File (.txt)</label>
+        <input type="file" id="sendMessageFile" accept=".txt">
+        <div class="file-info">One message per line</div>
+      </div>
+      <div class="form-group" id="sendImageFileRow" style="display:none;">
+        <label><i class="fas fa-image"></i> Image File</label>
+        <input type="file" id="sendImageFile" accept="image/*">
+      </div>
+      <button type="submit" class="btn btn-primary">
+        <span class="spinner"></span>
+        <i class="fas fa-rocket"></i><span>Start Task</span>
+      </button>
+    </form>
+  </div>
+</div>
+
+<!-- ============ LINK BACKUP MODAL ============ -->
+<div id="linkBackupModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3><i class="fas fa-shield-alt"></i> Manage Remote Backups</h3>
+      <button class="modal-close" id="closeLinkBackupModal">&times;</button>
+    </div>
+    <div id="linkBackupError" class="error-msg"></div>
+    <div id="linkBackupSuccess" class="success-msg"></div>
+    <div class="info-panel">
+      <i class="fas fa-info-circle"></i>
+      <span><strong>Remote Backup:</strong> When primary fails (ban/logout/disconnect), backup auto-takes over the same task at the same speed. When primary reconnects, backup stops automatically.</span>
+    </div>
+    <form id="linkBackupForm" style="margin-bottom:20px;">
+      <div class="form-group">
+        <label><i class="fas fa-crown"></i> Primary Session</label>
+        <select id="linkPrimarySession" required>
+          <option value="">-- Select primary --</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label><i class="fas fa-shield-alt"></i> Backup Session</label>
+        <select id="linkBackupSession" required>
+          <option value="">-- Select backup --</option>
+        </select>
+      </div>
+      <button type="submit" class="btn btn-primary">
+        <span class="spinner"></span>
+        <i class="fas fa-link"></i><span>Link Backup</span>
+      </button>
+    </form>
+
+    <div style="margin-top:24px;padding-top:16px;border-top:1px solid rgba(59,130,246,.2);">
+      <h4 style="font-size:13px;font-weight:900;margin-bottom:12px;color:#cbd5e1;letter-spacing:.3px;"><i class="fas fa-list"></i> Active Backup Links</h4>
+      <div id="activeBackupsList"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ ADMIN MODAL ============ -->
+<div id="adminModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3><i class="fas fa-shield-halved"></i> Admin Panel</h3>
+      <button class="modal-close" id="closeAdminModal">&times;</button>
+    </div>
+    <div style="text-align:center;padding:16px 0;">
+      <div style="font-size:48px;margin-bottom:12px;color:#60a5fa;filter:drop-shadow(0 6px 20px rgba(59,130,246,.6));">
+        <i class="fas fa-shield-halved"></i>
+      </div>
+      <h3 style="font-size:15px;margin-bottom:6px;font-weight:800;color:#fff;">Administrator</h3>
+      <p style="color:#94a3b8;font-size:12.5px;margin-bottom:16px;">Welcome <strong id="adminName" style="color:#6ee7b7;">Admin</strong></p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+        <div style="background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.3);border-radius:12px;padding:14px;">
+          <div style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;font-weight:800;margin-bottom:4px;">Role</div>
+          <div style="font-size:15px;font-weight:900;color:#60a5fa;">USER</div>
+        </div>
+        <div style="background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);border-radius:12px;padding:14px;">
+          <div style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;font-weight:800;margin-bottom:4px;">Sessions</div>
+          <div style="font-size:15px;font-weight:900;color:#6ee7b7;" id="adminSessions">0</div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div style="background:rgba(220,38,38,.1);border:1px solid rgba(220,38,38,.3);border-radius:12px;padding:14px;">
+          <div style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;font-weight:800;margin-bottom:4px;">Backup Links</div>
+          <div style="font-size:15px;font-weight:900;color:#fca5a5;" id="adminBackupLinks">0</div>
+        </div>
+        <div style="background:rgba(168,85,247,.1);border:1px solid rgba(168,85,247,.3);border-radius:12px;padding:14px;">
+          <div style="font-size:10px;color:#94a3b8;text-transform:uppercase;letter-spacing:1px;font-weight:800;margin-bottom:4px;">Uptime</div>
+          <div style="font-size:11px;font-weight:900;color:#c4b5fd;" id="adminUptime">-</div>
+        </div>
+      </div>
+    </div>
+    <button class="btn btn-primary" id="closeAdminBtn">Close</button>
+  </div>
+</div>
+
+<!-- ============ CONSOLE MODAL ============ -->
+<div id="consoleModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3><i class="fas fa-terminal"></i> Task Logs</h3>
+      <button class="modal-close" id="closeConsoleModal">&times;</button>
+    </div>
+    <div class="console-viewer" id="consoleViewer"><div class="console-line">Loading logs...</div></div>
+    <div style="margin-top:14px;">
+      <button class="btn btn-primary" id="refreshConsole"><i class="fas fa-sync-alt"></i> Reload Logs</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   STATE
+   ============================================================ */
+let currentUser = { username: null, role: null, approvalKey: null };
+let allSessions = [];
+let currentTaskSessionId = null;
+let currentTaskId = null;
+let consoleInterval = null;
+let rpRefreshInterval = null;
+let dashboardRefreshInterval = null;
+let allBackupLinks = [];
+
+/* ============================================================
+   UTILITIES
+   ============================================================ */
+function showLoading(text){
+  document.getElementById('loadingText').textContent = text || 'Please wait...';
+  document.getElementById('loadingOverlay').classList.add('show');
+}
+function hideLoading(){
+  document.getElementById('loadingOverlay').classList.remove('show');
+}
+function escapeHtml(str){
+  if(!str) return '';
+  return String(str).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+function formatUptime(ms){
+  if(!ms || ms < 0) return '0m 0s';
+  const s = Math.floor(ms/1000);
+  const h = Math.floor(s/3600);
+  const m = Math.floor((s%3600)/60);
+  const sec = s%60;
+  if(h > 0) return `${h}h ${m}m`;
+  return `${m}m ${sec}s`;
+}
+
+/* ============================================================
+   APPROVAL SYSTEM
+   ============================================================ */
+async function initializeApprovalKey(){
+  let key = localStorage.getItem('approvalKey');
+  if(!key){
+    try{
+      const fingerprint = {
+        userAgent: navigator.userAgent,
+        language: navigator.language,
+        platform: navigator.platform,
+        screenResolution: `${screen.width}x${screen.height}`,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
+      };
+      const res = await fetch('/api/generate-approval-key', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify(fingerprint)
+      });
+      if(res.ok){
+        const data = await res.json();
+        if(data.ok){
+          key = data.approvalKey;
+          localStorage.setItem('approvalKey', key);
+        }
+      } else {
+        // Fallback: use local fingerprint if endpoint missing
+        key = 'KEY-' + btoa(navigator.userAgent).substring(0,16).toUpperCase();
+        localStorage.setItem('approvalKey', key);
+      }
+    } catch(e){
+      key = 'KEY-' + Date.now().toString(36).toUpperCase();
+      localStorage.setItem('approvalKey', key);
+    }
+  }
+  document.getElementById('approvalKeyDisplay').textContent = key || 'ERR_KEY_GEN';
+  return key;
+}
+
+async function checkApprovalStatus(){
+  const key = localStorage.getItem('approvalKey');
+  const btn = document.getElementById('checkApprovalBtn');
+  const statusDiv = document.getElementById('approvalStatus');
+  if(!key){
+    statusDiv.innerHTML = '<i class="fas fa-times-circle"></i><span>No key found</span>';
+    return;
+  }
+  btn.classList.add('loading');
+  try{
+    const res = await fetch('/api/check-approval', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ approvalKey: key })
+    });
+    const data = await res.json();
+    if(data.ok && data.approved){
+      statusDiv.classList.add('approved');
+      statusDiv.innerHTML = '<i class="fas fa-check-circle"></i><span>Approved. Redirecting...</span>';
+      setTimeout(()=>{ showLoginPage(); }, 1200);
+    } else {
+      statusDiv.classList.remove('approved');
+      statusDiv.innerHTML = '<i class="fas fa-clock"></i><span>Awaiting approval...</span>';
+    }
+  } catch(e){
+    // If endpoint missing, allow through (dev mode)
+    statusDiv.classList.add('approved');
+    statusDiv.innerHTML = '<i class="fas fa-check-circle"></i><span>Dev mode. Proceeding...</span>';
+    setTimeout(()=>{ showLoginPage(); }, 1000);
+  } finally { btn.classList.remove('loading'); }
+}
+
+function sendApprovalRequest(){
+  const key = localStorage.getItem('approvalKey');
+  if(!key){ alert('No key generated'); return; }
+  const msg = `[Remote Backup Tool] Approval Request\nKey: ${key}`;
+  window.open(`https://wa.me/923150596250?text=${encodeURIComponent(msg)}`, '_blank');
+}
+
+function showLoginPage(){
+  document.getElementById('approvalPage').style.display = 'none';
+  document.getElementById('loginPage').style.display = 'flex';
+}
+
+document.getElementById('checkApprovalBtn').addEventListener('click', checkApprovalStatus);
+document.getElementById('sendApprovalBtn').addEventListener('click', sendApprovalRequest);
+
+document.getElementById('showSignup').addEventListener('click', () => {
+  document.getElementById('loginPage').style.display = 'none';
+  document.getElementById('signupPage').style.display = 'flex';
+});
+document.getElementById('showLogin').addEventListener('click', () => {
+  document.getElementById('signupPage').style.display = 'none';
+  document.getElementById('loginPage').style.display = 'flex';
+});
+
+/* ============================================================
+   LOGIN / SIGNUP
+   ============================================================ */
+document.getElementById('loginForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = e.target.querySelector('.btn');
+  const errorDiv = document.getElementById('loginError');
+  const username = document.getElementById('loginUsername').value;
+  const password = document.getElementById('loginPassword').value;
+  errorDiv.style.display = 'none';
+  btn.classList.add('loading');
+  try{
+    const res = await fetch('/login', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ username, password })
+    });
+    const data = await res.json();
+    if(data.success){
+      currentUser.username = username;
+      currentUser.role = 'user';
+      currentUser.approvalKey = localStorage.getItem('approvalKey');
+      localStorage.setItem('username', username);
+      localStorage.setItem('role', 'user');
+      initDashboard();
+    } else {
+      errorDiv.textContent = data.error || 'Invalid credentials';
+      errorDiv.style.display = 'block';
+    }
+  } catch(e){
+    errorDiv.textContent = 'Network error';
+    errorDiv.style.display = 'block';
+  } finally { btn.classList.remove('loading'); }
+});
+
+document.getElementById('signupForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = e.target.querySelector('.btn');
+  const errorDiv = document.getElementById('signupError');
+  const successDiv = document.getElementById('signupSuccess');
+  const username = document.getElementById('signupUsername').value;
+  const password = document.getElementById('signupPassword').value;
+  errorDiv.style.display = 'none';
+  successDiv.style.display = 'none';
+  btn.classList.add('loading');
+  try{
+    const res = await fetch('/signup', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ username, email: username+'@local', password })
+    });
+    const data = await res.json();
+    if(data.success){
+      successDiv.textContent = 'Account created! Redirecting to login...';
+      successDiv.style.display = 'block';
+      setTimeout(()=>{
+        document.getElementById('signupPage').style.display = 'none';
+        document.getElementById('loginPage').style.display = 'flex';
+        document.getElementById('loginUsername').value = username;
+      }, 1200);
+    } else {
+      errorDiv.textContent = data.error || 'Signup failed';
+      errorDiv.style.display = 'block';
+    }
+  } catch(e){
+    errorDiv.textContent = 'Network error';
+    errorDiv.style.display = 'block';
+  } finally { btn.classList.remove('loading'); }
+});
+
+/* ============================================================
+   DASHBOARD
+   ============================================================ */
+function initDashboard(){
+  document.getElementById('loginPage').style.display = 'none';
+  document.getElementById('signupPage').style.display = 'none';
+  document.getElementById('dashboardPage').classList.add('show');
+  document.getElementById('adminName').textContent = currentUser.username;
+  loadDashboardStats();
+  if(dashboardRefreshInterval) clearInterval(dashboardRefreshInterval);
+  dashboardRefreshInterval = setInterval(() => {
+    if(document.getElementById('dashboardPage').classList.contains('show')){
+      loadDashboardStats();
+    }
+  }, 8000);
+}
+
+async function loadDashboardStats(){
+  try{
+    const res = await fetch('/api/my-sessions');
+    const data = await res.json();
+    if(data.success){
+      allSessions = data.sessions || [];
+      allBackupLinks = data.links || [];
+      const total = allSessions.length;
+      const running = allSessions.filter(s => s.isConnected).length;
+      const backupActive = allSessions.filter(s => s.backupActive).length;
+      document.getElementById('statTotalSessions').textContent = total;
+      document.getElementById('statRunning').textContent = running;
+      document.getElementById('statBackupActive').textContent = backupActive;
+      document.getElementById('statBackupLinks').textContent = allBackupLinks.length;
+      document.getElementById('adminSessions').textContent = total;
+      document.getElementById('adminBackupLinks').textContent = allBackupLinks.length;
+    }
+  } catch(e){ console.error(e); }
+  loadUptime();
+}
+
+async function loadUptime(){
+  try{
+    const res = await fetch('/health');
+    const data = await res.json();
+    if(data.uptime){
+      document.getElementById('adminUptime').textContent = data.uptime;
+    }
+  } catch(e){}
+}
+
+document.getElementById('viewStatusBtn').addEventListener('click', openRunningProcesses);
+document.getElementById('pairNewBtn').addEventListener('click', openPairModal);
+document.getElementById('sendMessageBtn').addEventListener('click', openSendModal);
+document.getElementById('linkBackupBtn').addEventListener('click', openLinkBackupModal);
+document.getElementById('adminBtn').addEventListener('click', () => {
+  document.getElementById('adminModal').classList.add('show');
+  loadDashboardStats();
+});
+document.getElementById('logoutBtn').addEventListener('click', logout);
+document.getElementById('closeAdminModal').addEventListener('click', () => {
+  document.getElementById('adminModal').classList.remove('show');
+});
+document.getElementById('closeAdminBtn').addEventListener('click', () => {
+  document.getElementById('adminModal').classList.remove('show');
+});
+
+async function logout(){
+  if(!confirm('Logout from panel?')) return;
+  try{ await fetch('/logout'); }catch(e){}
+  currentUser = { username:null, role:null, approvalKey:null };
+  localStorage.removeItem('username');
+  localStorage.removeItem('role');
+  document.getElementById('dashboardPage').classList.remove('show');
+  document.getElementById('loginPage').style.display = 'flex';
+  if(dashboardRefreshInterval){ clearInterval(dashboardRefreshInterval); dashboardRefreshInterval = null; }
+  if(rpRefreshInterval){ clearInterval(rpRefreshInterval); rpRefreshInterval = null; }
+}
+
+/* ============================================================
+   RUNNING PROCESSES PAGE
+   ============================================================ */
+function openRunningProcesses(){
+  document.getElementById('dashboardPage').classList.remove('show');
+  document.getElementById('runningProcessesPage').classList.add('show');
+  loadRunningProcesses();
+  if(rpRefreshInterval) clearInterval(rpRefreshInterval);
+  rpRefreshInterval = setInterval(() => {
+    if(document.getElementById('runningProcessesPage').classList.contains('show')){
+      loadRunningProcesses();
+    }
+  }, 3000);
+}
+function closeRunningProcesses(){
+  document.getElementById('runningProcessesPage').classList.remove('show');
+  document.getElementById('dashboardPage').classList.add('show');
+  if(rpRefreshInterval){ clearInterval(rpRefreshInterval); rpRefreshInterval = null; }
+  loadDashboardStats();
+}
+document.getElementById('rpBackBtn').addEventListener('click', closeRunningProcesses);
+document.getElementById('rpRefreshBtn').addEventListener('click', (e) => {
+  const btn = e.currentTarget;
+  btn.classList.add('spinning');
+  loadRunningProcesses().then(() => setTimeout(()=>btn.classList.remove('spinning'), 600));
+});
+
+async function loadRunningProcesses(){
+  const list = document.getElementById('rpProcessList');
+  const errorBox = document.getElementById('rpErrorBox');
+  try{
+    const res = await fetch('/api/my-sessions');
+    const data = await res.json();
+    if(data.success && data.sessions && data.sessions.length > 0){
+      allSessions = data.sessions;
+      allBackupLinks = data.links || [];
+      errorBox.classList.remove('show');
+      renderRunningProcesses(data.sessions, allBackupLinks);
+    } else {
+      allSessions = [];
+      errorBox.classList.remove('show');
+      list.innerHTML = `
+        <div class="rp-empty">
+          <i class="fas fa-inbox"></i>
+          <h3>No sessions found</h3>
+          <p>Pair a new WhatsApp number to get started</p>
+        </div>`;
+    }
+  } catch(e){
+    errorBox.classList.add('show');
+  }
+}
+
+function renderRunningProcesses(sessions, links){
+  const list = document.getElementById('rpProcessList');
+  list.innerHTML = '';
+  const linkMap = new Map();
+  (links || []).forEach(([p,b]) => linkMap.set(p, b));
+
+  sessions.forEach(s => {
+    const uptime = formatUptime(Date.now() - new Date(s.createdAt).getTime());
+    const isBackup = s.isRemoteBackup;
+    const backupActive = s.backupActive;
+    const linkedBackupId = s.remoteBackupSessionId || linkMap.get(s.sessionId) || null;
+    const linkedPrimaryId = s.primarySessionId || null;
+    const runningTasks = s.runningTasksCount || 0;
+    const totalTasks = s.totalTasks || 0;
+
+    let cardClass = 'rp-process';
+    if(backupActive) cardClass += ' backup-active';
+
+    let statusBadge = '';
+    if(backupActive){
+      statusBadge = '<div class="rp-status-badge backup"><i class="fas fa-shield-alt"></i> BACKUP ACTIVE</div>';
+    } else if(s.isConnected){
+      statusBadge = '<div class="rp-status-badge running"><i class="fas fa-circle" style="font-size:8px"></i> Running</div>';
+    } else {
+      statusBadge = '<div class="rp-status-badge awaiting"><i class="fas fa-exclamation-triangle"></i> Disconnected</div>';
+    }
+
+    let roleBadge = '';
+    if(isBackup) roleBadge = '<span class="info-badge green"><i class="fas fa-shield-alt"></i> Backup</span>';
+    else roleBadge = '<span class="info-badge blue"><i class="fas fa-crown"></i> Primary</span>';
+
+    const buttons = `
+      <button class="rp-btn monitor" data-action="monitor" data-session="${s.sessionId}">
+        <i class="fas fa-chart-simple"></i> Monitor
+      </button>
+      <button class="rp-btn stop" data-action="stop" data-session="${s.sessionId}">
+        <i class="fas fa-stop-circle"></i> Stop
+      </button>
+    `;
+
+    const card = document.createElement('div');
+    card.className = cardClass;
+    card.innerHTML = `
+      <div class="rp-user">
+        <i class="fas fa-user-circle avatar-icon"></i>
+        <span class="username">${escapeHtml(s.username || 'User')}</span>
+      </div>
+      ${statusBadge}
+      <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-bottom:14px;">
+        ${roleBadge}
+        <span class="info-badge blue"><i class="fas fa-play"></i> ${runningTasks} running</span>
+        <span class="info-badge orange"><i class="fas fa-list"></i> ${totalTasks} total</span>
+      </div>
+      <div class="rp-buttons">${buttons}</div>
+      <div class="rp-details">
+        <div class="rp-detail-row">
+          <span class="label">Session ID:</span>
+          <span class="value">${escapeHtml(s.sessionId.substring(0,30))}...</span>
+        </div>
+        <div class="rp-detail-row">
+          <span class="label">Phone:</span>
+          <span class="value">${escapeHtml(s.number || 'N/A')}</span>
+        </div>
+        <div class="rp-detail-row">
+          <span class="label">Status:</span>
+          <span class="value ${s.isConnected ? 'success' : 'danger'}">${s.isConnected ? 'Connected ✓' : 'Disconnected ✗'}</span>
+        </div>
+        <div class="rp-detail-row">
+          <span class="label">Uptime:</span>
+          <span class="value success">${uptime}</span>
+        </div>
+        ${linkedBackupId ? `
+        <div class="rp-detail-row">
+          <span class="label">Backup Link:</span>
+          <span class="value warn">${escapeHtml(linkedBackupId.substring(0,20))}...</span>
+        </div>` : ''}
+        ${linkedPrimaryId ? `
+        <div class="rp-detail-row">
+          <span class="label">Primary Link:</span>
+          <span class="value warn">${escapeHtml(linkedPrimaryId.substring(0,20))}...</span>
+        </div>` : ''}
+        ${backupActive ? `
+        <div class="rp-detail-row">
+          <span class="label">Failover:</span>
+          <span class="value danger">Running as backup for ${escapeHtml((s.backupActiveFor||'').substring(0,20))}...</span>
+        </div>` : ''}
+      </div>
+    `;
+
+    card.querySelectorAll('[data-action]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const action = btn.getAttribute('data-action');
+        const sid = btn.getAttribute('data-session');
+        if(action === 'monitor') openConsole(sid);
+        else if(action === 'stop') stopSession(sid);
+      });
+    });
+
+    list.appendChild(card);
+  });
+}
+
+async function stopSession(sessionId){
+  if(!confirm('Stop this session? If it has a backup linked, backup will auto-takeover.')) return;
+  try{
+    const res = await fetch('/stop-session', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ sessionId })
+    });
+    const data = await res.json();
+    if(data.success){
+      await loadRunningProcesses();
+      await loadDashboardStats();
+    } else {
+      alert(data.error || 'Failed');
+    }
+  } catch(e){ alert('Network error'); }
+}
+
+/* ============================================================
+   PAIR MODAL
+   ============================================================ */
+function openPairModal(){
+  document.getElementById('pairError').style.display = 'none';
+  document.getElementById('pairSuccess').style.display = 'none';
+  document.getElementById('pairCodeDisplay').style.display = 'none';
+  document.getElementById('pairNumber').value = '';
+  document.getElementById('pairRole').value = 'primary';
+  document.getElementById('pairPrimaryRow').style.display = 'none';
+  const primSelect = document.getElementById('pairPrimarySession');
+  primSelect.innerHTML = '<option value="">-- Select primary --</option>';
+  allSessions.forEach(s => {
+    if(!s.isRemoteBackup){
+      const opt = document.createElement('option');
+      opt.value = s.sessionId;
+      opt.textContent = `${s.number} (${s.sessionId.substring(0,15)}...)`;
+      primSelect.appendChild(opt);
+    }
+  });
+  document.getElementById('pairModal').classList.add('show');
+}
+document.getElementById('closePairModal').addEventListener('click', () => {
+  document.getElementById('pairModal').classList.remove('show');
+});
+document.getElementById('pairRole').addEventListener('change', (e) => {
+  document.getElementById('pairPrimaryRow').style.display = e.target.value === 'backup' ? '' : 'none';
+});
+
+document.getElementById('pairForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = document.getElementById('pairSubmitBtn');
+  const errorDiv = document.getElementById('pairError');
+  const successDiv = document.getElementById('pairSuccess');
+  const codeDiv = document.getElementById('pairCodeDisplay');
+  const number = document.getElementById('pairNumber').value.trim();
+  const role = document.getElementById('pairRole').value;
+  const primarySessionId = document.getElementById('pairPrimarySession').value;
+
+  if(role === 'backup' && !primarySessionId){
+    errorDiv.textContent = 'Please select a primary session';
+    errorDiv.style.display = 'block';
+    return;
+  }
+
+  errorDiv.style.display = 'none';
+  successDiv.style.display = 'none';
+  codeDiv.style.display = 'none';
+  btn.classList.add('loading');
+
+  try{
+    const res = await fetch('/generate-pairing-code', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        number,
+        isBackup: role === 'backup',
+        primarySessionId: role === 'backup' ? primarySessionId : null
+      })
+    });
+    const data = await res.json();
+    if(data.success){
+      document.getElementById('pairCodeText').textContent = data.code;
+      codeDiv.style.display = 'block';
+      successDiv.textContent = '✅ Pair code generated! Enter it in WhatsApp within 2 minutes.';
+      successDiv.style.display = 'block';
+      setTimeout(() => loadDashboardStats(), 2000);
+    } else {
+      errorDiv.textContent = data.error || 'Failed to generate code';
+      errorDiv.style.display = 'block';
+    }
+  } catch(e){
+    errorDiv.textContent = 'Network error';
+    errorDiv.style.display = 'block';
+  } finally {
+    btn.classList.remove('loading');
+  }
+});
+
+/* ============================================================
+   SEND MESSAGE / IMAGE MODAL
+   ============================================================ */
+function openSendModal(){
+  document.getElementById('sendError').style.display = 'none';
+  const sessSelect = document.getElementById('sendSession');
+  sessSelect.innerHTML = '<option value="">-- Choose session --</option>';
+  allSessions.forEach(s => {
+    if(s.isConnected){
+      const opt = document.createElement('option');
+      opt.value = s.sessionId;
+      opt.textContent = `${s.number} ${s.isRemoteBackup ? '(backup)' : ''} - ${s.sessionId.substring(0,15)}...`;
+      sessSelect.appendChild(opt);
+    }
+  });
+  updateSendTaskTypeUI();
+  document.getElementById('sendModal').classList.add('show');
+}
+document.getElementById('closeSendModal').addEventListener('click', () => {
+  document.getElementById('sendModal').classList.remove('show');
+});
+
+document.getElementById('sendTaskType').addEventListener('change', updateSendTaskTypeUI);
+function updateSendTaskTypeUI(){
+  const type = document.getElementById('sendTaskType').value;
+  document.getElementById('sendMessageFileRow').style.display = type === 'message' ? '' : 'none';
+  document.getElementById('sendImageFileRow').style.display = type === 'image' ? '' : 'none';
+}
+
+document.getElementById('sendMentionType').addEventListener('change', () => {
+  const v = document.getElementById('sendMentionType').value;
+  document.getElementById('sendMentionNumbersRow').style.display =
+    (v === 'single' || v === 'all_listed' || v === 'selected_group') ? '' : 'none';
+});
+
+document.getElementById('sendForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = e.target.querySelector('.btn');
+  const errorDiv = document.getElementById('sendError');
+  const taskType = document.getElementById('sendTaskType').value;
+  const sessionId = document.getElementById('sendSession').value;
+  const targetType = document.getElementById('sendTargetType').value;
+  const target = document.getElementById('sendTarget').value.trim();
+  const delaySec = document.getElementById('sendDelay').value;
+  const prefix = document.getElementById('sendPrefix').value;
+  const mentionType = document.getElementById('sendMentionType').value;
+  const mentionNumbers = document.getElementById('sendMentionNumbers').value;
+
+  if(!sessionId || !target || !targetType || !delaySec){
+    errorDiv.textContent = 'Please fill all required fields';
+    errorDiv.style.display = 'block';
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append('selectedSession', sessionId);
+  formData.append('targetType', targetType === 'group' ? 'group' : 'individual');
+  formData.append('target', target);
+  formData.append('delaySec', delaySec);
+  formData.append('prefix', prefix);
+  formData.append('mentionType', mentionType);
+  formData.append('mentionNumbers', mentionNumbers);
+
+  if(taskType === 'message'){
+    const file = document.getElementById('sendMessageFile').files[0];
+    if(!file){
+      errorDiv.textContent = 'Please upload messages .txt file';
+      errorDiv.style.display = 'block';
+      return;
+    }
+    formData.append('messageFile', file);
+  } else {
+    const file = document.getElementById('sendImageFile').files[0];
+    if(!file){
+      errorDiv.textContent = 'Please upload an image';
+      errorDiv.style.display = 'block';
+      return;
+    }
+    formData.append('imageFile', file);
+  }
+
+  errorDiv.style.display = 'none';
+  btn.classList.add('loading');
+  showLoading('Starting task...');
+
+  try{
+    const endpoint = taskType === 'message' ? '/send-message' : '/send-image';
+    const res = await fetch(endpoint, { method:'POST', body: formData });
+    const data = await res.json();
+    if(data.success){
+      document.getElementById('sendModal').classList.remove('show');
+      e.target.reset();
+      updateSendTaskTypeUI();
+      alert('✅ Task started successfully!');
+      await loadRunningProcesses();
+      await loadDashboardStats();
+    } else {
+      errorDiv.textContent = data.error || 'Failed to start';
+      errorDiv.style.display = 'block';
+    }
+  } catch(e){
+    errorDiv.textContent = 'Network error';
+    errorDiv.style.display = 'block';
+  } finally {
+    btn.classList.remove('loading');
+    hideLoading();
+  }
+});
+
+/* ============================================================
+   LINK BACKUP MODAL
+   ============================================================ */
+function openLinkBackupModal(){
+  document.getElementById('linkBackupError').style.display = 'none';
+  document.getElementById('linkBackupSuccess').style.display = 'none';
+  const pSel = document.getElementById('linkPrimarySession');
+  const bSel = document.getElementById('linkBackupSession');
+  pSel.innerHTML = '<option value="">-- Select primary --</option>';
+  bSel.innerHTML = '<option value="">-- Select backup --</option>';
+  allSessions.forEach(s => {
+    if(!s.isRemoteBackup){
+      const opt = document.createElement('option');
+      opt.value = s.sessionId;
+      opt.textContent = `${s.number} - ${s.sessionId.substring(0,15)}...`;
+      pSel.appendChild(opt);
+    }
+    const opt2 = document.createElement('option');
+    opt2.value = s.sessionId;
+    opt2.textContent = `${s.number} ${s.isRemoteBackup ? '(backup)' : ''} - ${s.sessionId.substring(0,15)}...`;
+    bSel.appendChild(opt2);
+  });
+  renderActiveBackups();
+  document.getElementById('linkBackupModal').classList.add('show');
+}
+document.getElementById('closeLinkBackupModal').addEventListener('click', () => {
+  document.getElementById('linkBackupModal').classList.remove('show');
+});
+
+function renderActiveBackups(){
+  const list = document.getElementById('activeBackupsList');
+  if(!allBackupLinks || allBackupLinks.length === 0){
+    list.innerHTML = '<div style="text-align:center;padding:14px;color:#64748b;font-size:12px;">No backup links active</div>';
+    return;
+  }
+  list.innerHTML = allBackupLinks.map(([p, b]) => {
+    const pInfo = allSessions.find(s => s.sessionId === p);
+    const bInfo = allSessions.find(s => s.sessionId === b);
+    return `
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 12px;background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.3);border-radius:10px;margin-bottom:8px;gap:10px;">
+        <div style="font-size:11.5px;font-weight:700;color:#cbd5e1;flex:1;word-break:break-all;">
+          <span style="color:#6ee7b7;">${pInfo ? pInfo.number : p.substring(0,15)}</span>
+          <span style="color:#64748b;"> → </span>
+          <span style="color:#93c5fd;">${bInfo ? bInfo.number : b.substring(0,15)}</span>
+        </div>
+        <button class="rp-btn stop" data-unlink="${p}" style="padding:6px 12px;font-size:11px;">
+          <i class="fas fa-unlink"></i> Unlink
+        </button>
+      </div>
+    `;
+  }).join('');
+
+  list.querySelectorAll('[data-unlink]').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const primaryId = btn.getAttribute('data-unlink');
+      if(!confirm('Unlink this backup?')) return;
+      try{
+        const res = await fetch('/api/remote-backup/unlink', {
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ primarySessionId: primaryId })
+        });
+        const data = await res.json();
+        if(data.success){
+          await loadDashboardStats();
+          document.getElementById('linkBackupSuccess').textContent = '✅ Backup unlinked';
+          document.getElementById('linkBackupSuccess').style.display = 'block';
+          renderActiveBackups();
+        }
+      } catch(e){ alert('Failed to unlink'); }
+    });
+  });
+}
+
+document.getElementById('linkBackupForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = e.target.querySelector('.btn');
+  const errorDiv = document.getElementById('linkBackupError');
+  const successDiv = document.getElementById('linkBackupSuccess');
+  const primarySessionId = document.getElementById('linkPrimarySession').value;
+  const backupSessionId = document.getElementById('linkBackupSession').value;
+
+  if(!primarySessionId || !backupSessionId){
+    errorDiv.textContent = 'Please select both sessions';
+    errorDiv.style.display = 'block';
+    return;
+  }
+  if(primarySessionId === backupSessionId){
+    errorDiv.textContent = 'Primary and backup cannot be same';
+    errorDiv.style.display = 'block';
+    return;
+  }
+
+  errorDiv.style.display = 'none';
+  successDiv.style.display = 'none';
+  btn.classList.add('loading');
+
+  try{
+    const res = await fetch('/api/remote-backup/link', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ primarySessionId, backupSessionId })
+    });
+    const data = await res.json();
+    if(data.success){
+      successDiv.textContent = '✅ ' + data.message;
+      successDiv.style.display = 'block';
+      await loadDashboardStats();
+      renderActiveBackups();
+    } else {
+      errorDiv.textContent = data.error || 'Failed to link';
+      errorDiv.style.display = 'block';
+    }
+  } catch(e){
+    errorDiv.textContent = 'Network error';
+    errorDiv.style.display = 'block';
+  } finally {
+    btn.classList.remove('loading');
+  }
+});
+
+/* ============================================================
+   CONSOLE / TASK LOGS
+   ============================================================ */
+function openConsole(sessionId){
+  currentTaskSessionId = sessionId;
+  document.getElementById('consoleModal').classList.add('show');
+  const sess = allSessions.find(s => s.sessionId === sessionId);
+  if(sess && sess.tasks && sess.tasks.length > 0){
+    // Prefer running task
+    const running = sess.tasks.find(t => t.isSending);
+    currentTaskId = running ? running.taskId : sess.tasks[0].taskId;
+  } else {
+    currentTaskId = null;
+  }
+  loadConsole();
+  if(consoleInterval) clearInterval(consoleInterval);
+  consoleInterval = setInterval(loadConsole, 3000);
+}
+
+async function loadConsole(){
+  if(!currentTaskSessionId) return;
+  const viewer = document.getElementById('consoleViewer');
+  try{
+    if(!currentTaskId){
+      viewer.innerHTML = '<div class="console-line">No active task for this session. Start a task to see live logs.</div>';
+      return;
+    }
+    const res = await fetch(`/api/live-logs?sessionId=${currentTaskSessionId}&taskId=${currentTaskId}`);
+    const data = await res.json();
+    if(data.error){
+      viewer.innerHTML = `<div class="console-line error">${escapeHtml(data.error)}</div>`;
+      return;
+    }
+    viewer.innerHTML = '';
+    if(!data.logs || data.logs.length === 0){
+      viewer.innerHTML = '<div class="console-line">Waiting for logs...</div>';
+      return;
+    }
+    data.logs.forEach(log => {
+      const line = document.createElement('div');
+      line.className = 'console-line';
+      if(log.type === 'error') line.className += ' error';
+      else if(log.type === 'success') line.className += ' success';
+      else if(log.type === 'warn') line.className += ' warn';
+      line.innerHTML = `${log.message || ''}<br><small style="color:#64748b">${log.details || ''}</small>`;
+      viewer.appendChild(line);
+    });
+    viewer.scrollTop = 0;
+  } catch(e){
+    viewer.innerHTML = '<div class="console-line error">Failed to load logs</div>';
+  }
+}
+
+document.getElementById('closeConsoleModal').addEventListener('click', () => {
+  document.getElementById('consoleModal').classList.remove('show');
+  if(consoleInterval){ clearInterval(consoleInterval); consoleInterval = null; }
+  currentTaskSessionId = null;
+  currentTaskId = null;
+});
+document.getElementById('refreshConsole').addEventListener('click', loadConsole);
+
+/* ============================================================
+   AUTO LOGIN
+   ============================================================ */
+(function autoLogin(){
+  const savedUser = localStorage.getItem('username');
+  const savedKey = localStorage.getItem('approvalKey');
+  if(savedUser && savedKey){
+    fetch('/api/check-approval', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ approvalKey: savedKey })
+    })
+    .then(r => r.json())
+    .then(d => {
+      if(d.ok && d.approved){
+        currentUser.username = savedUser;
+        currentUser.role = 'user';
+        currentUser.approvalKey = savedKey;
+        document.getElementById('approvalPage').style.display = 'none';
+        initDashboard();
+      } else {
+        initializeApprovalKey();
+      }
+    })
+    .catch(() => initializeApprovalKey());
+  } else {
+    initializeApprovalKey();
+  }
+})();
+
+/* Close modals on outside click */
+document.querySelectorAll('.modal').forEach(m => {
+  m.addEventListener('click', (e) => {
+    if(e.target === m) m.classList.remove('show');
+  });
+});
+</script>
+</body>
+</html>
