@@ -1,0 +1,27 @@
+{
+  "name": "whatsapp-server",
+  "version": "1.0.0",
+  "main": "index.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "@whiskeysockets/baileys": "*",
+    "express": "*",
+    "bcrypt": "*",
+    "bcryptjs": "*",
+    "jsonwebtoken": "*",
+    "cookie-parser": "*",
+    "body-parser": "*",
+    "multer": "*",
+    "adm-zip": "*",
+    "chalk": "^4.1.2",
+    "helmet": "*",
+    "express-rate-limit": "*",
+    "pino": "*"
+  },
+  "engines": {
+    "node": ">=16"
+  }
+}
